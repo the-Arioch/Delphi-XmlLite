@@ -8,30 +8,41 @@ uses
   System.SysUtils,
   XmlLite in '..\XmlLite.pas';
 
-procedure RunSample; 
+procedure ReadXml(Reader: IXMLReader);
 var
-  _Reader: IXMLReader;
-  pValue, pName: PWideChar;
-  lenValue, lenName: Cardinal;
-  nodeType: Integer;
+  nodeType: XmlNodeType;
+  pName: PWideChar;
+  lenName: Cardinal;
+  pValue: PWideChar;
+  lenValue: Cardinal;
 begin
-  _Reader := CreateXmlFileReader('cd_catalog.xml');
-  while not _Reader.IsEOF do
+  while not Reader.IsEOF do
   begin
-    _Reader.Read(nodeType); //Read every node
-
+    Reader.Read(nodeType);
+    //Read every node
     //If it is an XML element node, get the name
     if nodeType = XmlNodeType_Element then
-      _Reader.GetLocalName(pName, lenName)
-
-    //If it is XML text and the current element is ARTIST, write the value
-    else if (pName = 'ARTIST') and (nodeType = Ord(XmlNodeType_Text)) then
+      Reader.GetLocalName(pName, lenName)
+    else //If it is XML text and the current element is ARTIST, write the value
+    if (pName = 'ARTIST') and (nodeType = XmlNodeType_Text) then
     begin
-      _Reader.GetValue(pValue, lenValue);
+      Reader.GetValue(pValue, lenValue);
       Writeln(pValue);
     end;
-      
   end;
+end;
+
+procedure RunSample;
+var
+  _Reader: IXMLReader;
+begin
+  _Reader := CreateXmlFileReader('cd_catalog.xml');
+  ReadXml(_Reader);
+  _Reader := nil;
+
+  _Reader := CreateXmlFileReaderWithEnc('cd_catalog.xml', TEncoding.Unicode);
+  ReadXml(_Reader);
+
 end;
 
 begin
