@@ -2,18 +2,25 @@
   Header translation for Microsoft XmlLite
   @author Carl Mönnig
 
-  * XmlLite is a native C++ implementation of .NET XmlReader+Writer for stream-based, forward-only XML parsing and creation.
-  * XmlLite.dll is required.  It is included with all new versions of Windows, and service packs for old versions.
-  * XmlReader's pull-based interface is cleaner to use than SAX's event-based interface.
-  * More info: http://msdn.microsoft.com/en-us/library/ms752838%28v=VS.85%29.aspx
+  * XmlLite is a native C++ implementation of .NET XmlReader+Writer for
+    stream-based, forward-only XML parsing and creation.
+  * XmlLite.dll is required.  It is included with all new versions of Windows,
+    and service packs for old versions.
+  * XmlReader's pull-based interface is cleaner to use than SAX's event-based
+    interface.
+  * More info:
+    http://msdn.microsoft.com/en-us/library/ms752838%28v=VS.85%29.aspx
 
-  Note: This is a minimal translation, some parts were not implemented and most are untested.
+  Note: This is a minimal translation, some parts were not implemented and most
+        are untested.
 -----------------------------------------------------------------------------}
 unit XmlLite;
 
 interface
 
-uses ActiveX;
+uses
+  Winapi.Windows,
+  Winapi.ActiveX;
 
 const
   XmlNodeType_None  = 0;
@@ -51,92 +58,202 @@ const
   XmlReaderProperty_MaxEntityExpansion  = 7;
 
 type
+  IXMLReaderInput = IUnknown;
+  IXMLWriterOutput = IUnknown;
+
   IXMLReader = interface
   ['{7279FC81-709D-4095-B63D-69FE4B0D9030}']
-    function SetInput(const _IXMLStream: IStream): HRESULT; stdcall;
-    function GetProperty(const nProperty: LongWord; out ppValue: Longint): HRESULT; stdcall;
-    function SetProperty(const nProperty: LongWord; const pValue: Longint): HRESULT; stdcall;
+    function SetInput(const pInput: IUnknown): HRESULT; stdcall;
+    function GetProperty(const nProperty: LongWord;
+      out ppValue: Longint): HRESULT; stdcall;
+    function SetProperty(const nProperty: LongWord;
+      const pValue: Longint): HRESULT; stdcall;
     function Read(out XmlNodeType: Integer): HRESULT; stdcall;
     function GetNodeType(out XmlNodeType: Integer): HRESULT; stdcall;
     function MoveToFirstAttribute: HRESULT; stdcall;
     function MoveToNextAttribute: HRESULT; stdcall;
-    function MoveToAttributeByName(const pwszLocalName, pwszNamespaceUri: WideString): HRESULT; stdcall;
+    function MoveToAttributeByName(const pwszLocalName,
+      pwszNamespaceUri: WideString): HRESULT; stdcall;
     function MoveToElement: HRESULT; stdcall;
-    function GetQualifiedName(out ppwszQualifiedName: PWideChar; out pcwchQualifiedName: LongWord): HRESULT; stdcall;
-    function GetNamespaceUri(out ppwszNamespaceUri: PWideChar; out pcwchNamespaceUri: LongWord): HRESULT; stdcall;
-    function GetLocalName(out ppwszLocalName: PWideChar; out pcwchLocalName: LongWord): HRESULT; stdcall;
-    function GetPrefix(out ppwszPrefix: PWideChar; out pcwchPrefix: LongWord): HRESULT; stdcall;
-    function GetValue(out ppwszValue: PWideChar; out pcwchValue: LongWord): HRESULT; stdcall;
-    function ReadValueChunk({__out_ecount_part(cwchChunkSize, *pcwchRead) WCHAR *pwchBuffer, LongWord cwchChunkSize, __inout  LongWord *pcwchRead}): HRESULT; stdcall;
-    function GetBaseUri(out ppwszBaseUri: PWideChar; out pcwchBaseUri: LongWord): HRESULT; stdcall;
+    function GetQualifiedName(out ppwszQualifiedName: PWideChar;
+      out pcwchQualifiedName: LongWord): HRESULT; stdcall;
+    function GetNamespaceUri(out ppwszNamespaceUri: PWideChar;
+      out pcwchNamespaceUri: LongWord): HRESULT; stdcall;
+    function GetLocalName(out ppwszLocalName: PWideChar;
+      out pcwchLocalName: LongWord): HRESULT; stdcall;
+    function GetPrefix(out ppwszPrefix: PWideChar;
+      out pcwchPrefix: LongWord): HRESULT; stdcall;
+    function GetValue(out ppwszValue: PWideChar;
+      out pcwchValue: LongWord): HRESULT; stdcall;
+    function ReadValueChunk({__out_ecount_part(cwchChunkSize, *pcwchRead)
+      WCHAR *pwchBuffer, LongWord cwchChunkSize,
+      __inout  LongWord *pcwchRead}): HRESULT; stdcall;
+    function GetBaseUri(out ppwszBaseUri: PWideChar;
+      out pcwchBaseUri: LongWord): HRESULT; stdcall;
     function IsDefault: LongBool; stdcall;
     function IsEmptyElement: LongBool; stdcall;
     function GetLineNumber(out pnLineNumber: LongWord): HRESULT; stdcall;
     function GetLinePosition(out pnLinePosition: LongWord): HRESULT; stdcall;
-    function GetAttributeCount(out pnAttributeCount: LongWord): HRESULT; stdcall;
+    function GetAttributeCount(
+      out pnAttributeCount: LongWord): HRESULT; stdcall;
     function GetDepth(out pnDepth: LongWord): HRESULT; stdcall;
     function IsEOF: LongBool; stdcall;
   end;
 
   IXMLWriter = interface
   ['{7279FC88-709D-4095-B63D-69FE4B0D9030}']
-    function SetOutput(const _IXMLStream: IStream): HRESULT; stdcall;
-    function GetProperty(const nProperty: LongWord; out ppValue: LongInt): HRESULT; stdcall;
-    function SetProperty(const nProperty: LongWord; const pValue: LongInt): HRESULT; stdcall;
-    function WriteAttributes(const pReader: IXmlReader; const fWriteDefaultAttributes: LongBool): HRESULT; stdcall;
-    function WriteAttributeString(const pwszPrefix, pwszLocalName, pwszNamespaceUri, pwszValue: WideString): HRESULT; stdcall;
+    function SetOutput(const pOutput: IUnknown): HRESULT; stdcall;
+    function GetProperty(const nProperty: LongWord;
+      out ppValue: LongInt): HRESULT; stdcall;
+    function SetProperty(const nProperty: LongWord;
+      const pValue: LongInt): HRESULT; stdcall;
+    function WriteAttributes(const pReader: IXmlReader;
+      const fWriteDefaultAttributes: LongBool): HRESULT; stdcall;
+    function WriteAttributeString(const pwszPrefix, pwszLocalName,
+      pwszNamespaceUri, pwszValue: WideString): HRESULT; stdcall;
     function WriteCData(const pwszText: WideString): HRESULT; stdcall;
     function WriteCharEntity(const wch: WideChar): HRESULT; stdcall;
-    function WriteChars({__in_ecount_opt(cwch)  const WCHAR *pwch, LongWord cwch}): HRESULT; stdcall;
+    function WriteChars({__in_ecount_opt(cwch)  const WCHAR *pwch,
+      LongWord cwch}): HRESULT; stdcall;
     function WriteComment(const pwszComment: WideString): HRESULT; stdcall;
-    function WriteDocType(const pwszName, pwszPublicId, pwszSystemId, pwszSubset: WideString): HRESULT; stdcall;
-    function WriteElementString(const pwszPrefix, pwszLocalName, pwszNamespaceUri, pwszValue: WideString): HRESULT; stdcall;
+    function WriteDocType(const pwszName, pwszPublicId, pwszSystemId,
+      pwszSubset: WideString): HRESULT; stdcall;
+    function WriteElementString(const pwszPrefix, pwszLocalName,
+      pwszNamespaceUri, pwszValue: WideString): HRESULT; stdcall;
     function WriteEndDocument: HRESULT; stdcall;
     function WriteEndElement: HRESULT; stdcall;
     function WriteEntityRef(const pwszName: WideString): HRESULT; stdcall;
     function WriteFullEndElement: HRESULT; stdcall;
     function WriteName(const pwszName: WideString): HRESULT; stdcall;
     function WriteNmToken(const pwszNmToken: WideString): HRESULT; stdcall;
-    function WriteNode(const pReader: IXmlReader; const fWriteDefaultAttributes: LongBool): HRESULT; stdcall;
-    function WriteNodeShallow(const pReader: IXmlReader; const fWriteDefaultAttributes: LongBool): HRESULT; stdcall;
-    function WriteProcessingInstruction(const pwszName, pwszText: WideString): HRESULT; stdcall;
-    function WriteQualifiedName(const pwszLocalName, pwszNamespaceUri: WideString): HRESULT; stdcall;
+    function WriteNode(const pReader: IXmlReader;
+      const fWriteDefaultAttributes: LongBool): HRESULT; stdcall;
+    function WriteNodeShallow(const pReader: IXmlReader;
+      const fWriteDefaultAttributes: LongBool): HRESULT; stdcall;
+    function WriteProcessingInstruction(const pwszName,
+      pwszText: WideString): HRESULT; stdcall;
+    function WriteQualifiedName(const pwszLocalName,
+      pwszNamespaceUri: WideString): HRESULT; stdcall;
     function WriteRaw(const pwszData: WideString): HRESULT; stdcall;
-    function WriteRawChars({_in_ecount_opt(cwch)  const WCHAR *pwch, LongWord cwch}): HRESULT; stdcall;
+    function WriteRawChars({_in_ecount_opt(cwch)  const WCHAR *pwch,
+      LongWord cwch}): HRESULT; stdcall;
     function WriteStartDocument(const standalone: Integer): HRESULT; stdcall;
-    function WriteStartElement(const pwszPrefix, pwszLocalName, pwszNamespaceUri: PWideChar): HRESULT; stdcall;
+    function WriteStartElement(const pwszPrefix, pwszLocalName,
+      pwszNamespaceUri: PWideChar): HRESULT; stdcall;
     function WriteString(const pwszText: WideString): HRESULT; stdcall;
-    function WriteSurrogateCharEntity(const wchLow, wchHigh: WideChar): HRESULT; stdcall;
-    function WriteWhitespace(const pwszWhitespace: WideString): HRESULT; stdcall;
+    function WriteSurrogateCharEntity(const wchLow,
+      wchHigh: WideChar): HRESULT; stdcall;
+    function WriteWhitespace(
+      const pwszWhitespace: WideString): HRESULT; stdcall;
     function Flush: HRESULT; stdcall;
   end;
 
-function CreateXmlFileReader(const FileName: string = ''): IXMLReader;
-function CreateXmlFileWriter(const FileName: string = ''): IXMLWriter;
+function CreateXmlFileReader(
+  const FileName: string = ''): IXMLReader; overload;
+
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLReader; overload;
+
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingName: string): IXMLReader; overload;
+
+function CreateXmlFileWriter(
+  const FileName: string = ''): IXMLWriter; overload;
+
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLWriter; overload;
+
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingName: string): IXMLWriter; overload;
 
 function OpenXmlFileStreamReader(const FileName: string): IStream;
+
 function OpenXmlFileStreamWriter(const FileName: string): IStream;
 
 procedure CheckHR(HR: HRESULT);
 
 implementation
 
-uses Classes, SysUtils;
+uses
+  System.Classes,
+  System.SysUtils;
 
 const
   XMLReaderGuid: TGUID = '{7279FC81-709D-4095-B63D-69FE4B0D9030}';
   XMLWriterGuid: TGUID = '{7279FC88-709D-4095-B63D-69FE4B0D9030}';
 
-function CreateXmlReader(const refiid: TGUID; out _IXMLReader: IXMLReader; const pMalloc: Pointer): HRESULT; stdcall; external 'XmlLite.dll';
-function CreateXmlWriter(const refiid: TGUID; out _IXMLWriter: IXMLWriter; const pMalloc: Pointer): HRESULT; stdcall; external 'XmlLite.dll';
+function CreateXmlReader(const refiid: TGUID; out _IXMLReader: IXMLReader;
+  const pMalloc: Pointer): HRESULT; stdcall; external 'XmlLite.dll';
+
+function CreateXmlReaderInputWithEncodingCodePage(const pInputStream: IUnknown;
+  const pMalloc: IMalloc; const nEncodingCodePage: UINT;
+  const fEncodingHint: BOOL; const pwszBaseUri: PWideChar;
+  out pInput: IXmlReaderInput): HRESULT; stdcall; external 'XmlLite.dll';
+
+function CreateXmlReaderInputWithEncodingName(const pInputStream: IUnknown;
+  const pMalloc: IMalloc; const pwszEncodingName: PWideChar;
+  const fEncodingHint: BOOL; const pwszBaseUri: PWideChar;
+  out pInput: IXmlReaderInput): HRESULT; stdcall; external 'XmlLite.dll';
+
+function CreateXmlWriter(const refiid: TGUID; out _IXMLWriter: IXMLWriter;
+  const pMalloc: Pointer): HRESULT; stdcall; external 'XmlLite.dll';
+
+function CreateXmlWriterOutputWithEncodingCodePage(
+  const pStream: ISequentialStream; const pMalloc: IMalloc;
+  const nEncodingCodePage: UINT; out
+  ppOuptut: IXMLWriterOutput): HRESULT; stdcall; external 'XmlLite.dll';
+
+function CreateXmlWriterOutputWithEncodingName(
+  const pStream: ISequentialStream; const pMalloc: IMalloc;
+  const pwszEncodingName: PWideChar;
+  out ppOuptut: IXMLWriterOutput): HRESULT; stdcall; external 'XmlLite.dll';
 
 function CreateXmlFileReader(const FileName: string): IXMLReader;
 begin
   CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
   if (Result <> nil) and (FileName <> '') then
   begin
-    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing, XmlDtdProcessing_Parse));
+    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing,
+      XmlDtdProcessing_Parse));
     CheckHR(Result.SetInput(OpenXmlFileStreamReader(FileName)));
+  end;
+end;
+
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLReader;
+var
+  Stream: IStream;
+  ReaderInput: IXMLReaderInput;
+begin
+  Assert(FileName <> '');
+  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
+  if Result <> nil then
+  begin
+    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing,
+      XmlDtdProcessing_Parse));
+    Stream := OpenXmlFileStreamReader(FileName);
+    CheckHR(CreateXmlReaderInputWithEncodingCodePage(Stream, nil,
+      AEncodingCodePage, True, '', ReaderInput));
+    CheckHR(Result.SetInput(ReaderInput));
+  end;
+end;
+
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingName: string): IXMLReader;
+var
+  Stream: IStream;
+  ReaderInput: IXMLReaderInput;
+begin
+  Assert(FileName <> '');
+  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
+  if Result <> nil then
+  begin
+    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing,
+      XmlDtdProcessing_Parse));
+    Stream := OpenXmlFileStreamReader(FileName);
+    CheckHR(CreateXmlReaderInputWithEncodingName(Stream, nil,
+      PWideChar(AEncodingName), True, '', ReaderInput));
+    CheckHR(Result.SetInput(ReaderInput));
   end;
 end;
 
@@ -147,15 +264,53 @@ begin
     CheckHR(Result.SetOutput(OpenXmlFileStreamWriter(FileName)));
 end;
 
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLWriter;
+var
+  WriterOutput: IXMLWriterOutput;
+  Stream: IStream;
+begin
+  Assert(FileName <> '');
+  CheckHR(CreateXmlWriter(XMLWriterGuid, Result, nil));
+  if (Result <> nil) then
+  begin
+    Stream := OpenXmlFileStreamWriter(FileName);
+    CheckHR(CreateXmlWriterOutputWithEncodingCodePage(Stream, nil,
+      AEncodingCodePage, WriterOutput));
+    Assert(WriterOutput <> nil);
+    CheckHR(Result.SetOutput(WriterOutput));
+  end;
+end;
+
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingName: string): IXMLWriter; overload;
+var
+  WriterOutput: IXMLWriterOutput;
+  Stream: IStream;
+begin
+  Assert(FileName <> '');
+  CheckHR(CreateXmlWriter(XMLWriterGuid, Result, nil));
+  if (Result <> nil) then
+  begin
+    Stream := OpenXmlFileStreamWriter(FileName);
+    CheckHR(CreateXmlWriterOutputWithEncodingName(Stream, nil,
+      PWideChar(AEncodingName), WriterOutput));
+    Assert(WriterOutput <> nil);
+    CheckHR(Result.SetOutput(WriterOutput));
+  end;
+end;
+
 function OpenXmlFileStreamReader(const FileName: string): IStream;
 begin
   Assert(FileExists(FileName), 'XML file should exist');
-  Result := TStreamAdapter.Create(TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite), soOwned);
+  Result := TStreamAdapter.Create(TFileStream.Create(FileName,
+    fmOpenRead or fmShareDenyWrite), soOwned);
 end;
 
 function OpenXmlFileStreamWriter(const FileName: string): IStream;
 begin
-  Result := TStreamAdapter.Create(TFileStream.Create(FileName, fmCreate), soOwned);
+  Result := TStreamAdapter.Create(TFileStream.Create(FileName, fmCreate),
+    soOwned);
 end;
 
 procedure CheckHR(hr: HRESULT);
@@ -163,4 +318,5 @@ begin
   if (hr < 0) then
     raise Exception.CreateFmt('XmlLite exception! Code: %d', [hr]);
 end;
+
 end.
