@@ -15,8 +15,9 @@ interface
 
 uses
   ActiveX,
-  System.SysUtils;
+  SysUtils;
 
+// TODO: check Win64 target - maybe there them should 64-bit enums ???
 {$MINENUMSIZE 4}
 type
   XmlNodeType = (
@@ -121,7 +122,7 @@ type
     function WriteQualifiedName(const pwszLocalName, pwszNamespaceUri: WideString): HRESULT; stdcall;
     function WriteRaw(const pwszData: WideString): HRESULT; stdcall;
     function WriteRawChars( { _in_ecount_opt(cwch)  const WCHAR *pwch, LongWord cwch } ): HRESULT; stdcall;
-    function WriteStartDocument(const standalone: Integer): HRESULT; stdcall;
+    function WriteStartDocument(const standalone: XmlStandAlone): HRESULT; stdcall;
     function WriteStartElement(const pwszPrefix, pwszLocalName, pwszNamespaceUri: PWideChar): HRESULT; stdcall;
     function WriteString(const pwszText: WideString): HRESULT; stdcall;
     function WriteSurrogateCharEntity(const wchLow, wchHigh: WideChar): HRESULT; stdcall;
