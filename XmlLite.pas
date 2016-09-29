@@ -144,7 +144,7 @@ function OpenXmlFileStreamReader(const FileName: string): IStream;
 
 function OpenXmlFileStreamWriter(const FileName: string): IStream;
 
-procedure CheckHR(HR: HRESULT);
+function CheckHR(const HR: HRESULT): HResult;
 
 implementation
 
@@ -248,10 +248,12 @@ begin
   Result := TStreamAdapter.Create(TFileStream.Create(FileName, fmCreate), soOwned);
 end;
 
-procedure CheckHR(HR: HRESULT);
+// Use example: repeat ... until until S_OK <> CheckHR( rd.MoveToNextAttribute() );
+function CheckHR(const HR: HRESULT): HResult;
 begin
   if (HR < 0) then
     raise Exception.CreateFmt('XmlLite exception! Code: %d', [HR]);
+  Result := HR;
 end;
 
 end.
