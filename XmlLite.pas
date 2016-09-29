@@ -146,6 +146,7 @@ function OpenXmlFileStreamReader(const FileName: string): IStream;
 function OpenXmlFileStreamWriter(const FileName: string): IStream;
 
 function CheckHR(const HR: HRESULT): HResult;
+function IsXMLLiteResultOK(const HR: HRESULT): Boolean; inline;
 
 implementation
 
@@ -255,6 +256,11 @@ begin
   if (HR < 0) then
     raise Exception.CreateFmt('XmlLite exception! Code: %d = 0x%x', [HR, HR]);
   Result := HR;
+end;
+
+function IsXMLLiteResultOK(const HR: HRESULT): Boolean;
+begin
+  Result := S_OK = CheckHR(HR);
 end;
 
 end.
