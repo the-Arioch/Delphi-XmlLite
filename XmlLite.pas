@@ -252,7 +252,7 @@ end;
 function CheckHR(const HR: HRESULT): HResult;
 begin
   if (HR < 0) then
-    raise Exception.CreateFmt('XmlLite exception! Code: %d', [HR]);
+    raise Exception.CreateFmt('XmlLite exception! Code: %d = 0x%x', [HR, HR]);
   Result := HR;
 end;
 
