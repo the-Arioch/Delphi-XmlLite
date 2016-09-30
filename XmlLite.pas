@@ -15,8 +15,9 @@ interface
 
 uses
   ActiveX,
-  System.SysUtils;
+  SysUtils;
 
+// TODO: check Win64 target - maybe there them should 64-bit enums ???
 {$MINENUMSIZE 4}
 type
   XmlNodeType = (
@@ -121,7 +122,7 @@ type
     function WriteQualifiedName(const pwszLocalName, pwszNamespaceUri: WideString): HRESULT; stdcall;
     function WriteRaw(const pwszData: WideString): HRESULT; stdcall;
     function WriteRawChars( { _in_ecount_opt(cwch)  const WCHAR *pwch, LongWord cwch } ): HRESULT; stdcall;
-    function WriteStartDocument(const standalone: Integer): HRESULT; stdcall;
+    function WriteStartDocument(const standalone: XmlStandAlone): HRESULT; stdcall;
     function WriteStartElement(const pwszPrefix, pwszLocalName, pwszNamespaceUri: PWideChar): HRESULT; stdcall;
     function WriteString(const pwszText: WideString): HRESULT; stdcall;
     function WriteSurrogateCharEntity(const wchLow, wchHigh: WideChar): HRESULT; stdcall;
@@ -144,7 +145,8 @@ function OpenXmlFileStreamReader(const FileName: string): IStream;
 
 function OpenXmlFileStreamWriter(const FileName: string): IStream;
 
-procedure CheckHR(HR: HRESULT);
+function CheckHR(const HR: HRESULT): HResult;
+function IsXMLLiteResultOK(const HR: HRESULT): Boolean; inline;
 
 implementation
 
@@ -248,10 +250,17 @@ begin
   Result := TStreamAdapter.Create(TFileStream.Create(FileName, fmCreate), soOwned);
 end;
 
-procedure CheckHR(HR: HRESULT);
+// Use example: repeat ... until until S_OK <> CheckHR( rd.MoveToNextAttribute() );
+function CheckHR(const HR: HRESULT): HResult;
 begin
   if (HR < 0) then
-    raise Exception.CreateFmt('XmlLite exception! Code: %d', [HR]);
+    raise Exception.CreateFmt('XmlLite exception! Code: %d = 0x%x', [HR, HR]);
+  Result := HR;
+end;
+
+function IsXMLLiteResultOK(const HR: HRESULT): Boolean;
+begin
+  Result := S_OK = CheckHR(HR);
 end;
 
 end.
