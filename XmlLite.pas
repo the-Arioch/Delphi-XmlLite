@@ -49,11 +49,6 @@ type
     XmlStandalone_No = 2
     );
 
-  DtdProcessing = (
-    XmlDtdProcessing_Prohibit = 0,
-    XmlDtdProcessing_Parse = 1
-    );
-
   XmlWriterProperty = (
     XmlWriterProperty_MultiLanguage = 0,
     XmlWriterProperty_Indent = 1,
@@ -82,13 +77,16 @@ type
     XmlReadState_Closed	= 4
     );
 
+  DtdProcessing = (
+    XmlDtdProcessing_Prohibit = 0,
+    XmlDtdProcessing_Parse = 1
+    );
+
   XmlConformanceLevel = (
     XmlConformanceLevel_Auto	= 0,
     XmlConformanceLevel_Fragment	= 1,
     XmlConformanceLevel_Document	= 2
     );
-
-{$MINENUMSIZE 1}
 
 (**  Win32/Win64 properties compatibility
 
@@ -106,7 +104,7 @@ type
  https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751.aspx
 
  Additionally - LPCWSTR stands for "const PWideChar" and
-    WideString stands for BSTR ( OLE/COM "Basic String")
+    WideString stands for BSTR ( OLE/COM "Basic String" )
  They are not the same, though kind of worked due to BSTR "implementation details".
  However that incurred redundant datatype casting UnicodeString -> WideString
     if nothing else. Could be a nice hack for pre-Unicode Delphi though.
@@ -118,6 +116,106 @@ type
             nil instead of UnicodeString/WideString into, say, WriteElementString
  **)
 
+{$MINENUMSIZE 1}
+
+  XmlError = (
+    MX_E_MX                         =  $C00CEE00,
+    MX_E_INPUTEND,                  // 0xC00CEE01 unexpected end of input
+    MX_E_ENCODING,                  // 0xC00CEE02 unrecognized encoding
+    MX_E_ENCODINGSWITCH,            // 0xC00CEE03 unable to switch the encoding
+    MX_E_ENCODINGSIGNATURE,         // 0xC00CEE04 unrecognized input signature
+
+    WC_E_WC                         =  $C00CEE20,
+    WC_E_WHITESPACE,                // 0xC00CEE21 whitespace expected
+    WC_E_SEMICOLON,                 // 0xC00CEE22 semicolon expected
+    WC_E_GREATERTHAN,               // 0xC00CEE23 '>' expected
+    WC_E_QUOTE,                     // 0xC00CEE24 quote expected
+    WC_E_EQUAL,                     // 0xC00CEE25 equal expected
+    WC_E_LESSTHAN,                  // 0xC00CEE26 wfc: no '<' in attribute value
+    WC_E_HEXDIGIT,                  // 0xC00CEE27 hexadecimal digit expected
+    WC_E_DIGIT,                     // 0xC00CEE28 decimal digit expected
+    WC_E_LEFTBRACKET,               // 0xC00CEE29 '[' expected
+    WC_E_LEFTPAREN,                 // 0xC00CEE2A '(' expected
+    WC_E_XMLCHARACTER,              // 0xC00CEE2B illegal xml character
+    WC_E_NAMECHARACTER,             // 0xC00CEE2C illegal name character
+    WC_E_SYNTAX,                    // 0xC00CEE2D incorrect document syntax
+    WC_E_CDSECT,                    // 0xC00CEE2E incorrect CDATA section syntax
+    WC_E_COMMENT,                   // 0xC00CEE2F incorrect comment syntax
+    WC_E_CONDSECT,                  // 0xC00CEE30 incorrect conditional section syntax
+    WC_E_DECLATTLIST,               // 0xC00CEE31 incorrect ATTLIST declaration syntax
+    WC_E_DECLDOCTYPE,               // 0xC00CEE32 incorrect DOCTYPE declaration syntax
+    WC_E_DECLELEMENT,               // 0xC00CEE33 incorrect ELEMENT declaration syntax
+    WC_E_DECLENTITY,                // 0xC00CEE34 incorrect ENTITY declaration syntax
+    WC_E_DECLNOTATION,              // 0xC00CEE35 incorrect NOTATION declaration syntax
+    WC_E_NDATA,                     // 0xC00CEE36 NDATA expected
+    WC_E_PUBLIC,                    // 0xC00CEE37 PUBLIC expected
+    WC_E_SYSTEM,                    // 0xC00CEE38 SYSTEM expected
+    WC_E_NAME,                      // 0xC00CEE39 name expected
+    WC_E_ROOTELEMENT,               // 0xC00CEE3A one root element
+    WC_E_ELEMENTMATCH,              // 0xC00CEE3B wfc: element type match
+    WC_E_UNIQUEATTRIBUTE,           // 0xC00CEE3C wfc: unique attribute spec
+    WC_E_TEXTXMLDECL,               // 0xC00CEE3D text/xmldecl not at the beginning of input
+    WC_E_LEADINGXML,                // 0xC00CEE3E leading "xml"
+    WC_E_TEXTDECL,                  // 0xC00CEE3F incorrect text declaration syntax
+    WC_E_XMLDECL,                   // 0xC00CEE40 incorrect xml declaration syntax
+    WC_E_ENCNAME,                   // 0xC00CEE41 incorrect encoding name syntax
+    WC_E_PUBLICID,                  // 0xC00CEE42 incorrect public identifier syntax
+    WC_E_PESINTERNALSUBSET,         // 0xC00CEE43 wfc: pes in internal subset
+    WC_E_PESBETWEENDECLS,           // 0xC00CEE44 wfc: pes between declarations
+    WC_E_NORECURSION,               // 0xC00CEE45 wfc: no recursion
+    WC_E_ENTITYCONTENT,             // 0xC00CEE46 entity content not well formed
+    WC_E_UNDECLAREDENTITY,          // 0xC00CEE47 wfc: undeclared entity
+    WC_E_PARSEDENTITY,              // 0xC00CEE48 wfc: parsed entity
+    WC_E_NOEXTERNALENTITYREF,       // 0xC00CEE49 wfc: no external entity references
+    WC_E_PI,                        // 0xC00CEE4A incorrect processing instruction syntax
+    WC_E_SYSTEMID,                  // 0xC00CEE4B incorrect system identifier syntax
+    WC_E_QUESTIONMARK,              // 0xC00CEE4C '?' expected
+    WC_E_CDSECTEND,                 // 0xC00CEE4D no ']]>' in element content
+    WC_E_MOREDATA,                  // 0xC00CEE4E not all chunks of value have been read
+    WC_E_DTDPROHIBITED,             // 0xC00CEE4F DTD was found but is prohibited
+    WC_E_INVALIDXMLSPACE,           // 0xC00CEE50 Invalid xml:space value
+
+    NC_E_NC                         =  $C00CEE60,
+    NC_E_QNAMECHARACTER,            // 0xC00CEE61 illegal qualified name character
+    NC_E_QNAMECOLON,                // 0xC00CEE62 multiple colons in qualified name
+    NC_E_NAMECOLON,                 // 0xC00CEE63 colon in name
+    NC_E_DECLAREDPREFIX,            // 0xC00CEE64 declared prefix
+    NC_E_UNDECLAREDPREFIX,          // 0xC00CEE65 undeclared prefix
+    NC_E_EMPTYURI,                  // 0xC00CEE66 non default namespace with empty uri
+    NC_E_XMLPREFIXRESERVED,         // 0xC00CEE67 "xml" prefix is reserved and must have the http://www.w3.org/XML/1998/namespace URI
+    NC_E_XMLNSPREFIXRESERVED,       // 0xC00CEE68 "xmlns" prefix is reserved for use by XML
+    NC_E_XMLURIRESERVED,            // 0xC00CEE69 xml namespace URI (http://www.w3.org/XML/1998/namespace) must be assigned only to prefix "xml"
+    NC_E_XMLNSURIRESERVED,          // 0xC00CEE6A xmlns namespace URI (http://www.w3.org/2000/xmlns/) is reserved and must not be used
+
+    SC_E_SC                         =  $C00CEE80,
+    SC_E_MAXELEMENTDEPTH,           // 0xC00CEE81 max element depth was exceeded
+    SC_E_MAXENTITYEXPANSION,        // 0xC00CEE82 max number of expanded entities was exceeded
+
+    WR_E_WR                         =  $C00CEF00,
+    WR_E_NONWHITESPACE,             // 0xC00CEF01 writer: specified string is not whitespace
+    WR_E_NSPREFIXDECLARED,          // 0xC00CEF02 writer: namespace prefix is already declared with a different namespace
+    WR_E_NSPREFIXWITHEMPTYNSURI,    // 0xC00CEF03 writer: cannot use prefix with empty namespace URI
+    WR_E_DUPLICATEATTRIBUTE,        // 0xC00CEF04 writer: duplicate attribute
+    WR_E_XMLNSPREFIXDECLARATION,    // 0xC00CEF05 writer: can not redefine the xmlns prefix
+    WR_E_XMLPREFIXDECLARATION,      // 0xC00CEF06 writer: xml prefix must have the http://www.w3.org/XML/1998/namespace URI
+    WR_E_XMLURIDECLARATION,         // 0xC00CEF07 writer: xml namespace URI (http://www.w3.org/XML/1998/namespace) must be assigned only to prefix "xml"
+    WR_E_XMLNSURIDECLARATION,       // 0xC00CEF08 writer: xmlns namespace URI (http://www.w3.org/2000/xmlns/) is reserved and must not be used
+    WR_E_NAMESPACEUNDECLARED,       // 0xC00CEF09 writer: namespace is not declared
+    WR_E_INVALIDXMLSPACE,           // 0xC00CEF0A writer: invalid value of xml:space attribute (allowed values are "default" and "preserve")
+    WR_E_INVALIDACTION,             // 0xC00CEF0B writer: performing the requested action would result in invalid XML document
+    WR_E_INVALIDSURROGATEPAIR,      // 0xC00CEF0C writer: input contains invalid or incomplete surrogate pair
+
+    XML_E_INVALID_DECIMAL           =  $C00CE01D,
+    XML_E_INVALID_HEXIDECIMAL       =  $C00CE01E,
+    XML_E_INVALID_UNICODE           =  $C00CE01F,
+    XML_E_INVALIDENCODING           =  $C00CE06E
+  );
+
+  rErrorDecription = record Code: cardinal; Message: string; end;
+  TXMLLiteKnownErrors = array of rErrorDecription;
+
+var
+  XMLLiteErrorMessages: TXMLLiteKnownErrors; // may be localized by thrid-party units
 
 type
   IXMLReader = interface
@@ -209,7 +307,7 @@ Use IXmlWriterLite when you can maintain complete XML document correctness in yo
                                       const Value: PWideChar; const ValueLength: Cardinal ): HRESULT; stdcall;
 
         function WriteCData(const pwszText: PWideChar): HRESULT; stdcall;
-        function WriteCharEntity(const wch: WideChar): HRESULT; stdcall;
+        function WriteCharEntity(const wch: WideChar):  HRESULT; stdcall;
         function WriteChars(const Chars: PWideChar; const Count: Cardinal): HRESULT; stdcall;
 
         function WriteComment(const pwszComment: PWideChar): HRESULT; stdcall;
@@ -368,5 +466,103 @@ function IsXMLLiteResultOK(const HR: HRESULT): Boolean;
 begin
   Result := S_OK = CheckHR(HR);
 end;
+
+function r(const c: cardinal; m: string): rErrorDecription; inline;
+begin
+  Result.Code := c;
+  Result.Message := m;
+end;
+
+begin
+
+  XMLLiteErrorMessages := TXMLLiteKnownErrors.Create(
+
+    r($C00CEE01, 'unexpected end of input'),
+    r($C00CEE02, 'unrecognized encoding'),
+    r($C00CEE03, 'unable to switch the encoding'),
+    r($C00CEE04, 'unrecognized input signature'),
+
+    r($C00CEE21, 'whitespace expected'),
+    r($C00CEE22, 'semicolon expected'),
+    r($C00CEE23, '">" expected'),
+    r($C00CEE24, 'quote expected'),
+    r($C00CEE25, 'equal expected'),
+    r($C00CEE26, 'wfc: no "<" in attribute value'),
+    r($C00CEE27, 'hexadecimal digit expected'),
+    r($C00CEE28, 'decimal digit expected'),
+    r($C00CEE29, '"[" expected'),
+    r($C00CEE2A, '"(" expected'),
+    r($C00CEE2B, 'illegal xml character'),
+    r($C00CEE2C, 'illegal name character'),
+    r($C00CEE2D, 'incorrect document syntax'),
+    r($C00CEE2E, 'incorrect CDATA section syntax'),
+    r($C00CEE2F, 'incorrect comment syntax'),
+    r($C00CEE30, 'incorrect conditional section syntax'),
+    r($C00CEE31, 'incorrect ATTLIST declaration syntax'),
+    r($C00CEE32, 'incorrect DOCTYPE declaration syntax'),
+    r($C00CEE33, 'incorrect ELEMENT declaration syntax'),
+    r($C00CEE34, 'incorrect ENTITY declaration syntax'),
+    r($C00CEE35, 'incorrect NOTATION declaration syntax'),
+    r($C00CEE36, 'NDATA expected'),
+    r($C00CEE37, 'PUBLIC expected'),
+    r($C00CEE38, 'SYSTEM expected'),
+    r($C00CEE39, 'name expected'),
+    r($C00CEE3A, 'one root element'),
+    r($C00CEE3B, 'wfc: element type match'),
+    r($C00CEE3C, 'wfc: unique attribute spec'),
+    r($C00CEE3D, 'text/xmldecl not at the beginning of input'),
+    r($C00CEE3E, 'leading "xml"'),
+    r($C00CEE3F, 'incorrect text declaration syntax'),
+    r($C00CEE40, 'incorrect xml declaration syntax'),
+    r($C00CEE41, 'incorrect encoding name syntax'),
+    r($C00CEE42, 'incorrect public identifier syntax'),
+    r($C00CEE43, 'wfc: pes in internal subset'),
+    r($C00CEE44, 'wfc: pes between declarations'),
+    r($C00CEE45, 'wfc: no recursion'),
+    r($C00CEE46, 'entity content not well formed'),
+    r($C00CEE47, 'wfc: undeclared entity'),
+    r($C00CEE48, 'wfc: parsed entity'),
+    r($C00CEE49, 'wfc: no external entity references'),
+    r($C00CEE4A, 'incorrect processing instruction syntax'),
+    r($C00CEE4B, 'incorrect system identifier syntax'),
+    r($C00CEE4C, '"?" expected'),
+    r($C00CEE4D, 'no "]]>" in element content'),
+    r($C00CEE4E, 'not all chunks of value have been read'),
+    r($C00CEE4F, 'DTD was found but is prohibited'),
+    r($C00CEE50, 'Invalid xml:space value'),
+
+    r($C00CEE61, 'illegal qualified name character'),
+    r($C00CEE62, 'multiple colons in qualified name'),
+    r($C00CEE63, 'colon in name'),
+    r($C00CEE64, 'declared prefix'),
+    r($C00CEE65, 'undeclared prefix'),
+    r($C00CEE66, 'non default namespace with empty uri'),
+    r($C00CEE67, '"xml" prefix is reserved and must have the http://www.w3.org/XML/1998/namespace URI'),
+    r($C00CEE68, '"xmlns" prefix is reserved for use by XML'),
+    r($C00CEE69, 'xml namespace URI ( http://www.w3.org/XML/1998/namespace ) must be assigned only to prefix "xml"'),
+    r($C00CEE6A, 'xmlns namespace URI ( http://www.w3.org/2000/xmlns/ ) is reserved and must not be used'),
+
+    r($C00CEE81, 'max element depth was exceeded'),
+    r($C00CEE82, 'max number of expanded entities was exceeded'),
+
+    r($C00CEF01, 'writer: specified string is not whitespace'),
+    r($C00CEF02, 'writer: namespace prefix is already declared with a different namespace'),
+    r($C00CEF03, 'writer: cannot use prefix with empty namespace URI'),
+    r($C00CEF04, 'writer: duplicate attribute'),
+    r($C00CEF05, 'writer: can not redefine the xmlns prefix'),
+    r($C00CEF06, 'writer: xml prefix must have the http://www.w3.org/XML/1998/namespace URI'),
+    r($C00CEF07, 'writer: xml namespace URI ( http://www.w3.org/XML/1998/namespace ) must be assigned only to prefix "xml"'),
+    r($C00CEF08, 'writer: xmlns namespace URI ( http://www.w3.org/2000/xmlns/ ) is reserved and must not be used'),
+    r($C00CEF09, 'writer: namespace is not declared'),
+    r($C00CEF0A, 'writer: invalid value of xml:space attribute (allowed values are "default" and "preserve")'),
+    r($C00CEF0B, 'writer: performing the requested action would result in invalid XML document'),
+    r($C00CEF0C, 'writer: input contains invalid or incomplete surrogate pair'),
+
+    r($C00CE01D, 'XML: Invalid decimal digit.'),
+    r($C00CE01E, 'XML: Invalid hexadecimal digit.'),
+    r($C00CE01F, 'XML: Invalid Unicode characters.'),
+    r($C00CE06E, 'XML: Invalid charset encoding.')
+
+  );
 
 end.
