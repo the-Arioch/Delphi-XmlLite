@@ -337,6 +337,28 @@ Use IXmlWriterLite when you can maintain complete XML document correctness in yo
         function Flush: HRESULT; stdcall;
       end platform experimental {'Requires Windows 10'};
 
+(**  MSDN  https://msdn.microsoft.com/en-us/library/ms752841.aspx
+
+     IXmlResolver is an interface for resolving external entities in XML.
+     An application can provide an implementation of this interface to allow a reader to resolve external entities.
+     For information about implementing the interface, see the description of its member method, ResolveUri.
+
+     See Also: XmlReaderProperty_XmlResolver and iXmlReader.SetProperty
+**)
+
+   IXmlResolver = interface
+   ['{7279FC82-709D-4095-B63D-69FE4B0D9030}']
+
+   // To return a resolved entity, the implementation can return ISequentialStream, IStream, or IXmlReaderInput through the pResolvedInput parameter
+   // By default, an IXmlReader has a resolver set to NULL. In this case, external entities are ignored—the reader simply replaces external entities
+   //    with an empty string. However, if a resolver is set for a reader, the reader calls the ResolveUri method of that resolver for each external
+   //    entity in the input.
+   // Note that the reader only accepts the success code S_OK. If the reader receives any other success code, the reader fails with E_FAIL.
+        function ResolveUri(
+            Const pwszBaseUri, pwszPublicIdentifier, pwszSystemIdentifier: PWideChar;
+            Out   ppResolvedInput: IUnknown): HRESULT; stdcall;
+   end;
+
 
 function CreateXmlFileReader(const FileName: string = ''): IXMLReader;
 
