@@ -118,6 +118,10 @@ type
 
 {$MINENUMSIZE 1}
 
+// Enumerations in Delphi are SIGNED integers thus the SDK error constants would trigger
+//     W1012 Constant expression violates subrange bounds (Delphi)
+//     for older Delphi/FPC try supporessing them with *temporary* {$WARNINGS OFF} instead.
+{$WARN BOUNDS_ERROR OFF}
   XmlError = (
     MX_E_MX                         =  $C00CEE00,
     MX_E_INPUTEND,                  // 0xC00CEE01 unexpected end of input
@@ -210,8 +214,9 @@ type
     XML_E_INVALID_UNICODE           =  $C00CE01F,
     XML_E_INVALIDENCODING           =  $C00CE06E
   );
+{$WARN BOUNDS_ERROR DEFAULT}
 
-  rErrorDecription = record Code: cardinal; Message: string; end;
+  rErrorDecription = record Code: XmlError; Message: String; end;
   TXMLLiteKnownErrors = array of rErrorDecription;
 
 var
@@ -345,8 +350,18 @@ function OpenXmlFileStreamReader(const FileName: string): IStream;
 
 function OpenXmlFileStreamWriter(const FileName: string): IStream;
 
-function CheckHR(const HR: HRESULT): HResult;
-function IsXMLLiteResultOK(const HR: HRESULT): Boolean; inline;
+procedure CheckHR(const HR: HRESULT); inline; deprecated 'Use EXmlLite.Check';
+
+type
+  EXmlLite = class(Exception)
+  private
+    FErrCode: Cardinal;
+  public
+    property ErrorCode: Cardinal read FErrCode; // 0 - unknown
+    Class Function Check(const FunctionResult: HRESULT): HResult; inline;
+    Class Function IsOK(const FunctionResult: HRESULT): boolean; inline;
+    constructor CreateForErrCode(const FunctionResult: HRESULT);
+  end;
 
 implementation
 
@@ -454,29 +469,58 @@ begin
   Result := TStreamAdapter.Create(TFileStream.Create(FileName, fmCreate), soOwned);
 end;
 
-// Use example: repeat ... until until S_OK <> CheckHR( rd.MoveToNextAttribute() );
-function CheckHR(const HR: HRESULT): HResult;
+{ EXmlLite }
+
+constructor EXmlLite.CreateForErrCode(const FunctionResult: HRESULT);
+var s: string; i: integer;
 begin
-  if (HR < 0) then
-    raise Exception.CreateFmt('XmlLite exception! Code: %d = 0x%x', [HR, HR]);
-  Result := HR;
+  s := Format('Microsoft XmlLite Error: %d == 0x%x', [FunctionResult, FunctionResult]);
+
+  // looking for registered human-readable description.
+  // Could use smwehat faster binary search ( TArray<T>.BinarySearch helper), but...
+  //   1) if the error messages would get localized, then no warranty they'd still be sorted
+  //   2) more dependencies on later Delphi RTL, where speed is most probably no more a goal
+  for i := Low(XMLLiteErrorMessages) to High(XMLLiteErrorMessages) do
+    if HRESULT(XMLLiteErrorMessages[i].Code) = FunctionResult then begin
+      s := s + #13#10+'Description: ' + XMLLiteErrorMessages[i].Message + '.';
+      break;
+    end;
+
+  FErrCode := FunctionResult;
+  Create( s );
 end;
 
-function IsXMLLiteResultOK(const HR: HRESULT): Boolean;
+// Use example: repeat ... until until S_OK <> EXmlLite.Check( rd.MoveToNextAttribute() );
+//              while S_OK = EXmlLite.Check( rd.Read(nodeType) ) do begin ... end;
+class function EXmlLite.Check(const FunctionResult: HRESULT): HResult;
 begin
-  Result := S_OK = CheckHR(HR);
+  if (FunctionResult < 0) then
+    raise CreateForErrCode( FunctionResult );
+  Result := FunctionResult;
 end;
+
+// Use example: repeat ... until until not EXmlLite.IsOK( rd.MoveToNextAttribute() );
+//              while EXmlLite.IsOK( rd.Read(nodeType) ) do begin ... end;
+class function EXmlLite.IsOK(const FunctionResult: HRESULT): boolean;
+begin
+  Result := S_OK = Check(FunctionResult);
+end;
+
+procedure CheckHR(const HR: HRESULT);
+begin
+// inline legacy-compatility stub
+  EXmlLite.Check( HR );
+end;
+
 
 function r(const c: cardinal; m: string): rErrorDecription; inline;
 begin
-  Result.Code := c;
+  Result.Code := XmlError(c);
   Result.Message := m;
 end;
 
 begin
-
   XMLLiteErrorMessages := TXMLLiteKnownErrors.Create(
-
     r($C00CEE01, 'unexpected end of input'),
     r($C00CEE02, 'unrecognized encoding'),
     r($C00CEE03, 'unable to switch the encoding'),
@@ -558,11 +602,9 @@ begin
     r($C00CEF0B, 'writer: performing the requested action would result in invalid XML document'),
     r($C00CEF0C, 'writer: input contains invalid or incomplete surrogate pair'),
 
-    r($C00CE01D, 'XML: Invalid decimal digit.'),
-    r($C00CE01E, 'XML: Invalid hexadecimal digit.'),
-    r($C00CE01F, 'XML: Invalid Unicode characters.'),
-    r($C00CE06E, 'XML: Invalid charset encoding.')
-
+    r($C00CE01D, 'XML: Invalid decimal digit'),
+    r($C00CE01E, 'XML: Invalid hexadecimal digit'),
+    r($C00CE01F, 'XML: Invalid Unicode characters'),
+    r($C00CE06E, 'XML: Invalid charset encoding')
   );
-
 end.
