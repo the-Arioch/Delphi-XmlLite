@@ -360,13 +360,21 @@ Use IXmlWriterLite when you can maintain complete XML document correctness in yo
    end;
 
 
-function CreateXmlFileReader(const FileName: string = ''): IXMLReader;
+function CreateXmlFileReader(const FileName: string = ''): IXMLReader; overload;
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLReader; overload;
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingName: string): IXMLReader; overload;
+function CreateXmlFileReader(const FileName: string;
+  const Encoding: TEncoding): IXmlReader; overload;
 
-function CreateXmlFileReaderWithEnc(const FileName: string; Encoding: TEncoding): IXmlReader;
-
-function CreateXmlFileWriter(const FileName: string = ''): IXMLWriter;
-
-function CreateXmlFileWriterWithEnc(const FileName: string; Encoding: TEncoding): IXmlWriter;
+function CreateXmlFileWriter(const FileName: string = ''): IXMLWriter; overload;
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLWriter; overload;
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingName: string): IXMLWriter; overload;
+function CreateXmlFileWriter(const FileName: string;
+  const Encoding: TEncoding): IXmlWriter; overload;
 
 function OpenXmlFileStreamReader(const FileName: string): IStream;
 
@@ -449,17 +457,52 @@ begin
   end;
 end;
 
-function CreateXmlFileReaderWithEnc(const FileName: string; Encoding: TEncoding): IXmlReader;
+function CreateXmlFileReader(const FileName: string; const Encoding: TEncoding): IXmlReader;
 var
   input: IXmlReaderInput;
   stream: IStream;
 begin
-  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
-  CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing, LongWord(XmlDtdProcessing_Parse)));
-  stream := OpenXmlFileStreamReader(FileName);
-  CheckHR(CreateXmlReaderInputWithEncodingCodePage(stream, nil, Encoding.CodePage, true, nil, input));
-  CheckHR(Result.SetInput(input));
+  Result := CreateXmlFileReader(FileName, Encoding.CodePage);
 end;
+
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLReader;
+var
+  Stream: IStream;
+  ReaderInput: IXMLReaderInput;
+begin
+  Assert(FileName <> '', 'Need XML File name');
+  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
+  if Result <> nil then
+  begin
+    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing,
+      Ord(XmlDtdProcessing_Parse)));
+    Stream := OpenXmlFileStreamReader(FileName);
+    CheckHR(CreateXmlReaderInputWithEncodingCodePage(Stream, nil,
+      AEncodingCodePage, True, nil, ReaderInput));
+    CheckHR(Result.SetInput(ReaderInput));
+  end;
+end;
+
+function CreateXmlFileReader(const FileName: string;
+  const AEncodingName: string): IXMLReader;
+var
+  Stream: IStream;
+  ReaderInput: IXMLReaderInput;
+begin
+  Assert(FileName <> '', 'Need XML File name');
+  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
+  if Result <> nil then
+  begin
+    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing,
+      Ord(XmlDtdProcessing_Parse)));
+    Stream := OpenXmlFileStreamReader(FileName);
+    CheckHR(CreateXmlReaderInputWithEncodingName(Stream, nil,
+      PWideChar(AEncodingName), True, nil, ReaderInput));
+    CheckHR(Result.SetInput(ReaderInput));
+  end;
+end;
+
 
 function CreateXmlFileWriter(const FileName: string): IXMLWriter;
 begin
@@ -468,15 +511,45 @@ begin
     CheckHR(Result.SetOutput(OpenXmlFileStreamWriter(FileName)));
 end;
 
-function CreateXmlFileWriterWithEnc(const FileName: string; Encoding: TEncoding): IXmlWriter;
-var
-  output: IXmlWriterOutput;
-  stream: IStream;
+function CreateXmlFileWriter(const FileName: string; const Encoding: TEncoding): IXmlWriter;
 begin
-  CheckHR(CreateXmlWriter(XMLWriterGuid, iUnknown(Result), nil));
-  stream := OpenXmlFileStreamWriter(FileName);
-  CheckHR(CreateXmlWriterOutputWithEncodingCodePage(stream, nil, Encoding.CodePage, output));
-  CheckHR(Result.SetOutput(output));
+  Result := CreateXmlFileWriter( FileName, Encoding.CodePage );
+end;
+
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingCodePage: UINT): IXMLWriter;
+var
+  WriterOutput: IXMLWriterOutput;
+  Stream: IStream;
+begin
+  Assert(FileName <> '', 'Need XML File name');
+  CheckHR(CreateXmlWriter(XMLWriterGuid, IUnknown(Result), nil));
+  if (Result <> nil) then
+  begin
+    Stream := OpenXmlFileStreamWriter(FileName);
+    CheckHR(CreateXmlWriterOutputWithEncodingCodePage(Stream, nil,
+      AEncodingCodePage, WriterOutput));
+    Assert(WriterOutput <> nil);
+    CheckHR(Result.SetOutput(WriterOutput));
+  end;
+end;
+
+function CreateXmlFileWriter(const FileName: string;
+  const AEncodingName: string): IXMLWriter; overload;
+var
+  WriterOutput: IXMLWriterOutput;
+  Stream: IStream;
+begin
+  Assert(FileName <> '', 'Need XML File name');
+  CheckHR(CreateXmlWriter(XMLWriterGuid, IUnknown(Result), nil));
+  if (Result <> nil) then
+  begin
+    Stream := OpenXmlFileStreamWriter(FileName);
+    CheckHR(CreateXmlWriterOutputWithEncodingName(Stream, nil,
+      PWideChar(AEncodingName), WriterOutput));
+    Assert(WriterOutput <> nil);
+    CheckHR(Result.SetOutput(WriterOutput));
+  end;
 end;
 
 
