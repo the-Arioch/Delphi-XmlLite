@@ -449,18 +449,15 @@ function CreateXmlWriterOutputWithEncodingName(
 
 function CreateXmlFileReader(const FileName: string): IXMLReader;
 begin
-  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
+  EXmlLite.Check(CreateXmlReader(XMLReaderGuid, Result, nil));
   if (Result <> nil) and (FileName <> '') then
   begin
-    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing, LongWord(XmlDtdProcessing_Parse)));
-    CheckHR(Result.SetInput(OpenXmlFileStreamReader(FileName)));
+    EXmlLite.Check(Result.SetProperty(XmlReaderProperty_DtdProcessing, LongWord(XmlDtdProcessing_Parse)));
+    EXmlLite.Check(Result.SetInput(OpenXmlFileStreamReader(FileName)));
   end;
 end;
 
 function CreateXmlFileReader(const FileName: string; const Encoding: TEncoding): IXmlReader;
-var
-  input: IXmlReaderInput;
-  stream: IStream;
 begin
   Result := CreateXmlFileReader(FileName, Encoding.CodePage);
 end;
@@ -472,15 +469,15 @@ var
   ReaderInput: IXMLReaderInput;
 begin
   Assert(FileName <> '', 'Need XML File name');
-  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
+  EXmlLite.Check(CreateXmlReader(XMLReaderGuid, Result, nil));
   if Result <> nil then
   begin
-    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing,
+    EXmlLite.Check(Result.SetProperty(XmlReaderProperty_DtdProcessing,
       Ord(XmlDtdProcessing_Parse)));
     Stream := OpenXmlFileStreamReader(FileName);
-    CheckHR(CreateXmlReaderInputWithEncodingCodePage(Stream, nil,
+    EXmlLite.Check(CreateXmlReaderInputWithEncodingCodePage(Stream, nil,
       AEncodingCodePage, True, nil, ReaderInput));
-    CheckHR(Result.SetInput(ReaderInput));
+    EXmlLite.Check(Result.SetInput(ReaderInput));
   end;
 end;
 
@@ -491,24 +488,24 @@ var
   ReaderInput: IXMLReaderInput;
 begin
   Assert(FileName <> '', 'Need XML File name');
-  CheckHR(CreateXmlReader(XMLReaderGuid, Result, nil));
+  EXmlLite.Check(CreateXmlReader(XMLReaderGuid, Result, nil));
   if Result <> nil then
   begin
-    CheckHR(Result.SetProperty(XmlReaderProperty_DtdProcessing,
+    EXmlLite.Check(Result.SetProperty(XmlReaderProperty_DtdProcessing,
       Ord(XmlDtdProcessing_Parse)));
     Stream := OpenXmlFileStreamReader(FileName);
-    CheckHR(CreateXmlReaderInputWithEncodingName(Stream, nil,
+    EXmlLite.Check(CreateXmlReaderInputWithEncodingName(Stream, nil,
       PWideChar(AEncodingName), True, nil, ReaderInput));
-    CheckHR(Result.SetInput(ReaderInput));
+    EXmlLite.Check(Result.SetInput(ReaderInput));
   end;
 end;
 
 
 function CreateXmlFileWriter(const FileName: string): IXMLWriter;
 begin
-  CheckHR(CreateXmlWriter(XMLWriterGuid, iUnknown(Result), nil));
+  EXmlLite.Check(CreateXmlWriter(XMLWriterGuid, iUnknown(Result), nil));
   if (Result <> nil) and (FileName <> '') then
-    CheckHR(Result.SetOutput(OpenXmlFileStreamWriter(FileName)));
+    EXmlLite.Check(Result.SetOutput(OpenXmlFileStreamWriter(FileName)));
 end;
 
 function CreateXmlFileWriter(const FileName: string; const Encoding: TEncoding): IXmlWriter;
@@ -523,14 +520,14 @@ var
   Stream: IStream;
 begin
   Assert(FileName <> '', 'Need XML File name');
-  CheckHR(CreateXmlWriter(XMLWriterGuid, IUnknown(Result), nil));
+  EXmlLite.Check(CreateXmlWriter(XMLWriterGuid, IUnknown(Result), nil));
   if (Result <> nil) then
   begin
     Stream := OpenXmlFileStreamWriter(FileName);
-    CheckHR(CreateXmlWriterOutputWithEncodingCodePage(Stream, nil,
+    EXmlLite.Check(CreateXmlWriterOutputWithEncodingCodePage(Stream, nil,
       AEncodingCodePage, WriterOutput));
     Assert(WriterOutput <> nil);
-    CheckHR(Result.SetOutput(WriterOutput));
+    EXmlLite.Check(Result.SetOutput(WriterOutput));
   end;
 end;
 
@@ -541,14 +538,14 @@ var
   Stream: IStream;
 begin
   Assert(FileName <> '', 'Need XML File name');
-  CheckHR(CreateXmlWriter(XMLWriterGuid, IUnknown(Result), nil));
+  EXmlLite.Check(CreateXmlWriter(XMLWriterGuid, IUnknown(Result), nil));
   if (Result <> nil) then
   begin
     Stream := OpenXmlFileStreamWriter(FileName);
-    CheckHR(CreateXmlWriterOutputWithEncodingName(Stream, nil,
+    EXmlLite.Check(CreateXmlWriterOutputWithEncodingName(Stream, nil,
       PWideChar(AEncodingName), WriterOutput));
     Assert(WriterOutput <> nil);
-    CheckHR(Result.SetOutput(WriterOutput));
+    EXmlLite.Check(Result.SetOutput(WriterOutput));
   end;
 end;
 
