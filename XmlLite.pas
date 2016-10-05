@@ -8,6 +8,12 @@
   * More info: http://msdn.microsoft.com/en-us/library/ms752838%28v=VS.85%29.aspx
 
   Note: This is a minimal translation, some parts were not implemented and most are untested.
+
+  UPD: https://github.com/the-Arioch/Delphi-XmlLite
+    Updated to Windows SDK 2016, fixed declarations errors, added error-messages, merged forks.
+    Win64 compatibility should work but was not tested.
+    Many functions and new interfaces should work but were not tested.
+    Caveat emptor (well, this is FLOSS, so it is your software, not mine; use responsibly)
   ----------------------------------------------------------------------------- }
 unit XmlLite;
 
@@ -17,15 +23,6 @@ uses
   ActiveX,
   Windows, // LONG_PTR type in Win32/Win64 with different Delphi versions
   SysUtils;
-
-// The underscored superlong enum values like "XmlNodeType_ProcessingInstruction" are crazy.
-//       Better to use Scoped Enumerations
-//       They are supported starting with Delphi 2009 (missing in 2007 and prior)
-//       They are supported starting with FPC 2.6.0
-//       Would anyone really care about prior versions? Hardly so.
-// http://docs.embarcadero.com/products/rad_studio/delphiAndcpp2009/HelpUpdate2/EN/html/devcommon/compdirsscopedenums_xml.html
-// http://docs.embarcadero.com/products/rad_studio/radstudio2007/RS2007_helpupdates/HUpdate4/EN/html/devcommon/delphicompdirectivespart_xml.html
-// http://wiki.freepascal.org/FPC_New_Features_2.6.0
 
 {$MINENUMSIZE 4}
 {$ScopedEnums ON}
@@ -89,7 +86,7 @@ type
     Document	= 2
     );
 
-(**  Win32/Win64 properties compatibility
+(**  Win32/Win64 properties compatibility, datatypes, enume sizes:
 
  https://msdn.microsoft.com/en-us/library/ms752842.aspx
  HRESULT GetProperty ([in] UINT nProperty, [out] LONG_PTR ** ppValue);
@@ -115,8 +112,18 @@ type
    b) PWideChar can tell states of "no string" aka nil aka NULL and
             one of empty aka 0-length string. But one can not pass
             nil instead of UnicodeString/WideString into, say, WriteElementString
- **)
 
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ The underscored superlong enum values like "XmlNodeType_ProcessingInstruction" are crazy.
+       Better to use Scoped Enumerations
+       They are supported starting with Delphi 2009 (missing in 2007 and prior)
+       They are supported starting with FPC 2.6.0
+       Would anyone really care about prior versions? Hardly so.
+ http://docs.embarcadero.com/products/rad_studio/delphiAndcpp2009/HelpUpdate2/EN/html/devcommon/compdirsscopedenums_xml.html
+ http://docs.embarcadero.com/products/rad_studio/radstudio2007/RS2007_helpupdates/HUpdate4/EN/html/devcommon/delphicompdirectivespart_xml.html
+ http://wiki.freepascal.org/FPC_New_Features_2.6.0
+ **)
 {$MINENUMSIZE 1}
 
 // Enumerations in Delphi are SIGNED integers thus the SDK error constants would trigger
@@ -344,7 +351,7 @@ Use IXmlWriterLite when you can maintain complete XML document correctness in yo
    IXmlResolver = interface
    ['{7279FC82-709D-4095-B63D-69FE4B0D9030}']
 
-   // To return a resolved entity, the implementation can return ISequentialStream, IStream, or IXmlReaderInput through the pResolvedInput parameter
+   // MSDN: To return a resolved entity, the implementation can return ISequentialStream, IStream, or IXmlReaderInput through the pResolvedInput parameter
    // By default, an IXmlReader has a resolver set to NULL. In this case, external entities are ignored—the reader simply replaces external entities
    //    with an empty string. However, if a resolver is set for a reader, the reader calls the ResolveUri method of that resolver for each external
    //    entity in the input.
@@ -388,7 +395,7 @@ type
     property ErrorCode: Cardinal read FErrCode; // 0 - unknown
     constructor CreateForErrCode(const FunctionResult: HRESULT);
   public
-    Class Var XMLLiteErrorMessages: TXMLLiteKnownErrors; // may be localized by thrid-party units
+    Class Var XMLLiteErrorMessages: TXMLLiteKnownErrors; // may be localized by third-party units
     Class Constructor InitMessages;
 
     Class Function Check(const FunctionResult: HRESULT): HResult; inline;
@@ -405,7 +412,7 @@ const
   XMLWriterGuid:     TGUID = '{7279FC88-709D-4095-B63D-69FE4B0D9030}';
   XMLWriterLiteGUID: TGUID = '{862494C6-1310-4AAD-B3CD-2DBEEBF670D3}';
 
-// To sleep with: do not load DLL and funciton until we really call them, if ever
+// An idea to sleep with: do not load DLL and those functions until we really call them, if ever.
 // Implemented starting with Delphi 2010 - http://www.tindex.net/Language/delayed.html
 
 function CreateXmlReader(
@@ -570,8 +577,8 @@ var s: string; i: integer;
 begin
   s := Format('Microsoft XmlLite Error: %d == 0x%x', [FunctionResult, FunctionResult]);
 
-  // looking for registered human-readable description.
-  // Could use smwehat faster binary search ( TArray<T>.BinarySearch helper), but...
+  // Now looking for matching registered human-readable description, if exists.
+  // Could use somewhat faster binary search ( TArray<T>.BinarySearch helper), but...
   //   1) if the error messages would get localized, then no warranty they'd still be sorted
   //   2) more dependencies on later Delphi RTL, where speed is most probably no more a goal
   for i := Low(XMLLiteErrorMessages) to High(XMLLiteErrorMessages) do
