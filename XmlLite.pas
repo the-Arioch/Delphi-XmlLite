@@ -217,12 +217,6 @@ type
   );
 {$WARN BOUNDS_ERROR DEFAULT}
 
-  rErrorDecription = record Code: XmlError; Message: String; end;
-  TXMLLiteKnownErrors = array of rErrorDecription;
-
-var
-  XMLLiteErrorMessages: TXMLLiteKnownErrors; // may be localized by thrid-party units
-
 type
   IXMLReader = interface
     ['{7279FC81-709D-4095-B63D-69FE4B0D9030}']
@@ -384,14 +378,21 @@ function OpenXmlFileStreamWriter(const FileName: string): IStream;
 procedure CheckHR(const HR: HRESULT); inline; deprecated 'Use EXmlLite.Check';
 
 type
+  rErrorDecription = record Code: XmlError; Message: String; end;
+  TXMLLiteKnownErrors = array of rErrorDecription;
+
   EXmlLite = class(Exception)
   private
     FErrCode: Cardinal;
   public
     property ErrorCode: Cardinal read FErrCode; // 0 - unknown
+    constructor CreateForErrCode(const FunctionResult: HRESULT);
+  public
+    Class Var XMLLiteErrorMessages: TXMLLiteKnownErrors; // may be localized by thrid-party units
+    Class Constructor InitMessages;
+
     Class Function Check(const FunctionResult: HRESULT): HResult; inline;
     Class Function IsOK(const FunctionResult: HRESULT): boolean; inline;
-    constructor CreateForErrCode(const FunctionResult: HRESULT);
   end;
 
 implementation
@@ -605,13 +606,12 @@ begin
   EXmlLite.Check( HR );
 end;
 
-
-function r(const c: cardinal; m: string): rErrorDecription; inline;
-begin
-  Result.Code := XmlError(c);
-  Result.Message := m;
-end;
-
+class constructor EXmlLite.InitMessages;
+  function r(const c: cardinal; m: string): rErrorDecription; inline;
+  begin
+    Result.Code := XmlError(c);
+    Result.Message := m;
+  end;
 begin
   XMLLiteErrorMessages := TXMLLiteKnownErrors.Create(
     r($C00CEE01, 'unexpected end of input'),
@@ -700,4 +700,6 @@ begin
     r($C00CE01F, 'XML: Invalid Unicode characters'),
     r($C00CE06E, 'XML: Invalid charset encoding')
   );
+end;
+
 end.
