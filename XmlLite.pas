@@ -18,7 +18,7 @@ uses
   Windows, // LONG_PTR type in Win32/Win64 with different Delphi versions
   SysUtils;
 
-// TODO: The underscored superlong enum values are crazy.
+// The underscored superlong enum values like "XmlNodeType_ProcessingInstruction" are crazy.
 //       Better to use Scoped Enumerations
 //       They are supported starting with Delphi 2009 (missing in 2007 and prior)
 //       They are supported starting with FPC 2.6.0
@@ -28,64 +28,65 @@ uses
 // http://wiki.freepascal.org/FPC_New_Features_2.6.0
 
 {$MINENUMSIZE 4}
+{$ScopedEnums ON}
 type
   XmlNodeType = (
-    XmlNodeType_None = 0,
-    XmlNodeType_Element = 1,
-    XmlNodeType_Attribute = 2,
-    XmlNodeType_Text = 3,
-    XmlNodeType_CDATA = 4,
-    XmlNodeType_ProcessingInstruction = 7,
-    XmlNodeType_Comment = 8,
-    XmlNodeType_DocumentType = 10,
-    XmlNodeType_Whitespace = 13,
-    XmlNodeType_EndElement = 15,
-    XmlNodeType_XmlDeclaration = 17
+    None = 0,
+    Element = 1,
+    Attribute = 2,
+    Text = 3,
+    CDATA = 4,
+    ProcessingInstruction = 7,
+    Comment = 8,
+    DocumentType = 10,
+    Whitespace = 13,
+    EndElement = 15,
+    XmlDeclaration = 17
     );
 
   XmlStandAlone = (
-    XmlStandalone_Omit = 0,
-    XmlStandalone_Yes = 1,
-    XmlStandalone_No = 2
+    Omit = 0,
+    Yes = 1,
+    No = 2
     );
 
   XmlWriterProperty = (
-    XmlWriterProperty_MultiLanguage = 0,
-    XmlWriterProperty_Indent = 1,
-    XmlWriterProperty_ByteOrderMark = 2,
-    XmlWriterProperty_OmitXmlDeclaration = 3,
-    xmlWriterProperty_ConformanceLevel = 4,
-    XmlWriterProperty_CompactEmptyElement = 5
+    MultiLanguage = 0,
+    Indent = 1,
+    ByteOrderMark = 2,
+    OmitXmlDeclaration = 3,
+    ConformanceLevel = 4,
+    CompactEmptyElement = 5
     );
 
   XmlReaderProperty = (
-    XmlReaderProperty_MultiLanguage = 0,
-    XmlReaderProperty_ConformanceLevel = 1,
-    XmlReaderProperty_RandomAccess = 2,
-    XmlReaderProperty_XmlResolver = 3,
-    XmlReaderProperty_DtdProcessing = 4,
-    XmlReaderProperty_ReadState = 5,
-    XmlReaderProperty_MaxElementDepth = 6,
-    XmlReaderProperty_MaxEntityExpansion = 7
+    MultiLanguage = 0,
+    ConformanceLevel = 1,
+    RandomAccess = 2,
+    XmlResolver = 3,
+    DtdProcessing = 4,
+    ReadState = 5,
+    MaxElementDepth = 6,
+    MaxEntityExpansion = 7
     );
 
   XmlReadState = (
-    XmlReadState_Initial	= 0,
-    XmlReadState_Interactive	= 1,
-    XmlReadState_Error	= 2,
-    XmlReadState_EndOfFile	= 3,
-    XmlReadState_Closed	= 4
+    Initial	= 0,
+    Interactive	= 1,
+    Error	= 2,
+    EndOfFile	= 3,
+    Closed	= 4
     );
 
-  DtdProcessing = (
-    XmlDtdProcessing_Prohibit = 0,
-    XmlDtdProcessing_Parse = 1
+  XmlDtdProcessing = (
+    Prohibit = 0,
+    Parse = 1
     );
 
   XmlConformanceLevel = (
-    XmlConformanceLevel_Auto	= 0,
-    XmlConformanceLevel_Fragment	= 1,
-    XmlConformanceLevel_Document	= 2
+    Auto	= 0,
+    Fragment	= 1,
+    Document	= 2
     );
 
 (**  Win32/Win64 properties compatibility
@@ -452,7 +453,7 @@ begin
   EXmlLite.Check(CreateXmlReader(XMLReaderGuid, Result, nil));
   if (Result <> nil) and (FileName <> '') then
   begin
-    EXmlLite.Check(Result.SetProperty(XmlReaderProperty_DtdProcessing, LongWord(XmlDtdProcessing_Parse)));
+    EXmlLite.Check(Result.SetProperty(XmlReaderProperty.DtdProcessing, Ord(XmlDtdProcessing.Parse)));
     EXmlLite.Check(Result.SetInput(OpenXmlFileStreamReader(FileName)));
   end;
 end;
@@ -472,8 +473,8 @@ begin
   EXmlLite.Check(CreateXmlReader(XMLReaderGuid, Result, nil));
   if Result <> nil then
   begin
-    EXmlLite.Check(Result.SetProperty(XmlReaderProperty_DtdProcessing,
-      Ord(XmlDtdProcessing_Parse)));
+    EXmlLite.Check(Result.SetProperty(XmlReaderProperty.DtdProcessing,
+      Ord(XmlDtdProcessing.Parse)));
     Stream := OpenXmlFileStreamReader(FileName);
     EXmlLite.Check(CreateXmlReaderInputWithEncodingCodePage(Stream, nil,
       AEncodingCodePage, True, nil, ReaderInput));
@@ -491,8 +492,8 @@ begin
   EXmlLite.Check(CreateXmlReader(XMLReaderGuid, Result, nil));
   if Result <> nil then
   begin
-    EXmlLite.Check(Result.SetProperty(XmlReaderProperty_DtdProcessing,
-      Ord(XmlDtdProcessing_Parse)));
+    EXmlLite.Check(Result.SetProperty(XmlReaderProperty.DtdProcessing,
+      Ord(XmlDtdProcessing.Parse)));
     Stream := OpenXmlFileStreamReader(FileName);
     EXmlLite.Check(CreateXmlReaderInputWithEncodingName(Stream, nil,
       PWideChar(AEncodingName), True, nil, ReaderInput));
