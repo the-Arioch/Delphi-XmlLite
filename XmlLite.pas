@@ -469,6 +469,8 @@ end;
 function CreateXmlFileReader(const FileName: string; const Encoding: TEncoding): IXmlReader;
 begin
   Result := CreateXmlFileReader(FileName, Encoding.CodePage);
+  // in Delphi 2009 ( if anyone would ever need ) TEncoding.CodePage was not available
+  // see OmniXML's OEncoding.pas to see a class helper hack to pull it out
 end;
 
 function CreateXmlFileReader(const FileName: string;
