@@ -6,7 +6,7 @@ program XmlLiteSample;
 
 uses
   System.SysUtils,
-  XmlLite in '..\XmlLite.pas';
+  XmlLite in '..\..\XmlLite.pas';
 
 procedure ReadXml(Reader: IXMLReader);
 var
@@ -21,10 +21,10 @@ begin
     Reader.Read(nodeType);
     //Read every node
     //If it is an XML element node, get the name
-    if nodeType = XmlNodeType_Element then
+    if nodeType = XmlNodeType.Element then
       Reader.GetLocalName(pName, lenName)
     else //If it is XML text and the current element is ARTIST, write the value
-    if (pName = 'ARTIST') and (nodeType = XmlNodeType_Text) then
+    if (pName = 'ARTIST') and (nodeType = XmlNodeType.Text) then
     begin
       Reader.GetValue(pValue, lenValue);
       Writeln(pValue);
@@ -40,7 +40,9 @@ begin
   ReadXml(_Reader);
   _Reader := nil;
 
-  _Reader := CreateXmlFileReaderWithEnc('cd_catalog.xml', TEncoding.Unicode);
+  Writeln;
+
+  _Reader := CreateXmlFileReader('cd_catalog.xml', TEncoding.Unicode);
   ReadXml(_Reader);
 
 end;
@@ -53,6 +55,7 @@ begin
       Writeln(E.ClassName, ': ', E.Message);
   end;
 
+  Writeln;
   Writeln('Hit return to close.');
   Readln;
 end.
