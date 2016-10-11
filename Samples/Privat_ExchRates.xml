@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<account_order>
+<unsupport/>
+<logged sessioncount="0" visitscount="0"/>
+<locale language="ru">
+</locale>
+<request url_base="http://privat24.privatbank.ua/p24/" url="/accountorder" os="Win" win="Y" ie="N"/>
+<info>
+</info>
+
+<row><exchangerate ccy="RUR" base_ccy="UAH" buy="0.40800" sale="0.41800"/></row><row><exchangerate ccy="EUR" base_ccy="UAH" buy="28.70000" sale="28.90000"/></row><row><exchangerate ccy="USD" base_ccy="UAH" buy="25.80000" sale="26.00000"/></row></account_order>

@@ -21,7 +21,8 @@ interface
 
 uses
   ActiveX,
-  Windows, // LONG_PTR type in Win32/Win64 with different Delphi versions
+  Windows,   // LONG_PTR type in Win32/Win64 with different Delphi versions
+  Classes,
   SysUtils;
 
 {$MINENUMSIZE 4}
@@ -337,7 +338,7 @@ Use IXmlWriterLite when you can maintain complete XML document correctness in yo
         function WriteSurrogateCharEntity(const wchLow, wchHigh: WideChar): HRESULT; stdcall;
         function WriteWhitespace(const pwszWhitespace: PWideChar): HRESULT; stdcall;
         function Flush: HRESULT; stdcall;
-      end platform experimental {'Requires Windows 10'};
+      end library {'Requires Windows 10'};
 
 (**  MSDN  https://msdn.microsoft.com/en-us/library/ms752841.aspx
 
@@ -369,6 +370,8 @@ function CreateXmlFileReader(const FileName: string;
   const AEncodingName: string): IXMLReader; overload;
 function CreateXmlFileReader(const FileName: string;
   const Encoding: TEncoding): IXmlReader; overload;
+//function CreateXmlFileReader(const FileName: string;
+//  const Encoding: TEncoding): IXmlReader; overload;
 
 function CreateXmlFileWriter(const FileName: string = ''): IXMLWriter; overload;
 function CreateXmlFileWriter(const FileName: string;
@@ -377,6 +380,43 @@ function CreateXmlFileWriter(const FileName: string;
   const AEncodingName: string): IXMLWriter; overload;
 function CreateXmlFileWriter(const FileName: string;
   const Encoding: TEncoding): IXmlWriter; overload;
+
+// All these CreateXXXXX functions are subject to combinatorial explosion
+//    with regard to their semantic parameters and different datatypes for each.
+// This can be resolved using Advanced Records with class operators Implicit
+//    ( approach being christened Magnet Pattern in Scala community, if you
+//      want to google some names, though the idea is self evident IMHO ).
+// But this approach is problematic with both optional parameters and
+//    quite limited Delphi type inference.
+// So i prefer to unify them into a fluid-API helper.
+
+type
+  TAfterXmlLiteCreationHelper = TProc<iInterface, Pointer>; // re-define for pre-2010 Delphi versions
+
+  iXmlLiteCreationHelper = interface
+     function Data(const COMStream: iStream): IXmlLiteCreationHelper; overload;
+     function Data(const FileName: TFileName): IXmlLiteCreationHelper; overload;
+     function Data(const DataStream: TStream; const OwnStreamObject: boolean = True;
+                   const Rewind: boolean = false): IXmlLiteCreationHelper; overload;
+
+     function Encoding(const Encoding: TEncoding): IXmlLiteCreationHelper; overload;
+     function Encoding(const EncodingCodePage: UINT): IXmlLiteCreationHelper; overload;
+     function Encoding(const EncodingName: string): IXmlLiteCreationHelper; overload;
+
+     function MemoryManager(const MM: iMalloc): IXmlLiteCreationHelper;
+     function ExternalEntities(const EntitiesResolver: iXmlResolver): IXmlLiteCreationHelper;
+
+     function Reader: IXMLReader;
+     function Writer: IXMLWriter;
+{$WARN SYMBOL_library OFF}
+     function LiteWriter: IXmlWriterLite; library {Windows 10 only};
+{$WARN SYMBOL_library DEFAULT}
+
+     // register a handler that would check that the actual reader or writer was created (the parameter is not nil)
+     function OnDestroy(const callback: TAfterXmlLiteCreationHelper; const UserData: Pointer = nil): IXmlLiteCreationHelper;
+  end;
+
+function CreateXmlLite: iXmlLiteCreationHelper;
 
 function OpenXmlFileStreamReader(const FileName: string): IStream;
 
@@ -403,9 +443,6 @@ type
   end;
 
 implementation
-
-uses
-  Classes;
 
 const
   XMLReaderGuid:     TGUID = '{7279FC81-709D-4095-B63D-69FE4B0D9030}';
@@ -570,6 +607,285 @@ end;
 function OpenXmlFileStreamWriter(const FileName: string): IStream;
 begin
   Result := TStreamAdapter.Create(TFileStream.Create(FileName, fmCreate), soOwned);
+end;
+
+type
+  xlHelper = class( TInterfacedObject, iXmlLiteCreationHelper)
+  private
+     DestroyingCallBack: TAfterXmlLiteCreationHelper;
+     DestroyingTag: Pointer;
+     CreatedReaderWriter: iInterface;
+
+     Resolver:    iXmlResolver;
+     HeapManager: iMalloc;
+
+   type
+{$ScopedEnums OFF}
+     xlEncType =  (etNone, etName, etCP);
+     xlDataType = (dtNone, dtCOM, dtFileName, dtDelphiStream);
+   var
+     EncType:  xlEncType;
+     DataType: xlDataType;
+     DataDSOwn, DataDSRewind: boolean;
+     DataDSObject:  TStream;
+     DataCOMStream: iStream;
+     DataFileName:  string;
+     EncCharset: string;
+     EncCodePage: Cardinal;
+     procedure CleanFor(const Mode: xlDataType); overload;
+     procedure CleanFor(const Mode: xlEncType); overload;
+     function InternalCreateWriter(const kind: TGUID): iUnknown;
+  protected
+     function Data(const COMStream: iStream): IXmlLiteCreationHelper; overload;
+     function Data(const FileName: TFileName): IXmlLiteCreationHelper; overload;
+     function Data(const DataStream: TStream; const OwnStreamObject, Rewind: boolean): IXmlLiteCreationHelper; overload;
+
+     function Encoding(const EncodingObj: TEncoding): IXmlLiteCreationHelper; overload;
+     function Encoding(const EncodingCodePage: UINT): IXmlLiteCreationHelper; overload;
+     function Encoding(const EncodingName: string): IXmlLiteCreationHelper; overload;
+
+     function MemoryManager(const MM: iMalloc): IXmlLiteCreationHelper;
+     function ExternalEntities(const EntitiesResolver: iXmlResolver): IXmlLiteCreationHelper;
+
+     function Reader: IXMLReader;
+     function Writer: IXMLWriter;
+{$WARN SYMBOL_library Off}
+     function LiteWriter: IXmlWriterLite; library {Windows 10 only};
+{$WARN SYMBOL_library Default}
+
+     // register a handler that would check that the actual reader or writer was created (the parameter is not nil)
+     function OnDestroy(const callback: TAfterXmlLiteCreationHelper; const UserData: Pointer = nil): IXmlLiteCreationHelper;
+  public
+     destructor Destroy; override;
+  end;
+
+{$WARN SYMBOL_library OFF}
+function CreateXmlLite: iXmlLiteCreationHelper;
+begin
+  Result := xlHelper.Create;
+end;
+{$WARN SYMBOL_library Default}
+
+{ xlHelper }
+
+function xlHelper.Data(const DataStream: TStream; const OwnStreamObject,
+  Rewind: boolean): IXmlLiteCreationHelper;
+var Mode: xlDataType;
+begin
+  if Assigned(DataStream)
+     then Mode := dtDelphiStream
+     else Mode := dtNone;
+  CleanFor( Mode );
+  if DataType = dtDelphiStream then
+  begin
+    if Self.DataDSOwn and (Self.DataDSObject <> DataStream) then
+       FreeAndNil( Self.DataDSObject );
+
+    Self.DataDSObject := DataStream;
+    Self.DataDSRewind := Rewind;
+    Self.DataDSOwn    := OwnStreamObject;
+  end;
+
+  Result := Self;
+end;
+
+function xlHelper.Data(const FileName: TFileName): IXmlLiteCreationHelper;
+var Mode: xlDataType;
+begin
+  if FileName > ''
+     then Mode := dtFileName
+     else Mode := dtNone;
+  CleanFor( Mode );
+
+  Result := Self;
+end;
+
+function xlHelper.Data(const COMStream: iStream): IXmlLiteCreationHelper;
+var Mode: xlDataType;
+begin
+  if Assigned(COMStream)
+     then Mode := dtCOM
+     else Mode := dtNone;
+  CleanFor( Mode );
+  if DataType = dtCOM then
+     Self.DataCOMStream := COMStream;
+
+  Result := Self;
+end;
+
+function xlHelper.Encoding(const EncodingName: string): IXmlLiteCreationHelper;
+var Mode: xlEncType;
+begin
+  if EncodingName > ''
+     then Mode := etName
+     else Mode := etNone;
+  CleanFor( Mode );
+  if EncType = etName then
+     Self.EncCharset := EncodingName;
+
+  Result := Self;
+end;
+
+function xlHelper.Encoding(
+  const EncodingCodePage: UINT): IXmlLiteCreationHelper;
+var Mode: xlEncType;
+begin
+  if EncodingCodePage > 0
+     then Mode := etCP
+     else Mode := etNone;
+  CleanFor(Mode);
+  if EncType = etCP then
+     Self.EncCodePage := EncodingCodePage;
+
+  Result := Self;
+end;
+
+function xlHelper.Encoding(const EncodingObj: TEncoding): IXmlLiteCreationHelper;
+begin
+  Result := Encoding( EncodingObj.CodePage );
+  // if .CodePage is not yet published (example: Delphi 2009) see class helper hack in OmniXML's OEncodings
+end;
+
+function xlHelper.MemoryManager(const MM: iMalloc): IXmlLiteCreationHelper;
+begin
+  Self.HeapManager := MM;
+
+  Result := Self;
+end;
+
+function xlHelper.ExternalEntities(
+  const EntitiesResolver: iXmlResolver): IXmlLiteCreationHelper;
+begin
+  Self.Resolver := EntitiesResolver;
+
+  Result := Self;
+end;
+
+function xlHelper.Reader: IXMLReader;
+var
+  Ownership: TStreamOwnership;
+  ReaderInput: IXMLReaderInput;
+begin
+  EXmlLite.Check(CreateXmlReader(XMLReaderGuid, Result, nil));
+  if Result <> nil then
+  begin
+    EXmlLite.Check(Result.SetProperty(XmlReaderProperty.DtdProcessing,
+      Ord(XmlDtdProcessing.Parse)));
+
+    if DataType > dtNone then
+    begin
+      if DataType = dtFileName then
+      begin
+        DataDSObject := TFileStream.Create(DataFileName, fmOpenRead or fmShareDenyWrite);
+        DataDSOwn    := True;
+        DataDSRewind := False;
+        DataType     := dtDelphiStream;
+      end;
+
+      if DataType = dtDelphiStream then
+      begin
+        if DataDSOwn
+           then Ownership := soOwned
+           else Ownership := soReference;
+        if DataDSRewind then
+           DataDSObject.Seek(0,soFromBeginning);
+        DataCOMStream := TStreamAdapter.Create(DataDSObject, Ownership);
+        DataDSObject  := nil;
+        DataType := dtCOM;
+      end;
+
+      if DataType <> dtCOM then DataCOMStream := nil;
+    end;
+
+    if nil <> DataCOMStream then begin
+      case EncType of
+        etName: EXmlLite.Check(
+                   CreateXmlReaderInputWithEncodingName( DataCOMStream, nil,
+                        PWideChar(EncCharset), True, nil, ReaderInput));
+        etCP: EXmlLite.Check(
+                 CreateXmlReaderInputWithEncodingCodePage( DataCOMStream, HeapManager,
+                     EncCodePage, True, nil, ReaderInput));
+        else;
+      end;
+      if nil <> ReaderInput then
+         EXmlLite.Check(Result.SetInput(ReaderInput)) else
+      if nil <> DataCOMStream then
+         EXmlLite.Check(Result.SetInput(DataCOMStream));
+    end;
+  end;
+
+  Self.CreatedReaderWriter := Result;
+  CleanFor(dtNone);
+  CleanFor(etNone);
+end;
+
+function xlHelper.InternalCreateWriter(const kind: TGUID): iUnknown;
+var
+  WriterOutput: IXMLWriterOutput;
+begin
+
+end;
+
+function xlHelper.Writer: IXMLWriter;
+begin
+end;
+
+{$WARN SYMBOL_library OFF}
+function xlHelper.LiteWriter: IXmlWriterLite;
+begin
+end;
+{$WARN SYMBOL_library Default}
+
+function xlHelper.OnDestroy(const callback: TAfterXmlLiteCreationHelper;
+  const UserData: Pointer): IXmlLiteCreationHelper;
+begin
+  DestroyingCallBack := callback;
+  DestroyingTag := UserData;
+
+  Result := Self;
+end;
+
+destructor xlHelper.Destroy;
+begin
+  if Assigned( DestroyingCallBack ) then
+     DestroyingCallBack( CreatedReaderWriter, DestroyingTag);
+
+  CleanFor(dtNone);
+  CleanFor(etNone);
+
+  inherited;
+end;
+
+procedure xlHelper.CleanFor(const Mode: xlEncType);
+begin
+  if Mode = EncType then exit;
+  CreatedReaderWriter := nil;
+
+  if Mode <> etName then
+     EncCharset := '';
+  if Mode <> etCP then
+     EncCodePage := 0;
+
+  EncType := Mode;
+end;
+
+procedure xlHelper.CleanFor(const Mode: xlDataType);
+begin
+  if Mode = DataType then exit;
+  CreatedReaderWriter := nil;
+
+  if Mode <> dtFileName then
+     DataFileName := '';
+  if Mode <> dtCOM then
+     DataCOMStream := nil;
+  if Mode <> dtDelphiStream then
+  begin
+     if DataDSOwn then
+        DataDSObject.Free;
+     DataDSObject := nil;
+  end;
+
+  DataType := Mode;
 end;
 
 { EXmlLite }
