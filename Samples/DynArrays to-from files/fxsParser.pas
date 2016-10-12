@@ -39,7 +39,6 @@ Type
   TTableList = TList< TfxsTable >;
   TFieldList = TList< TfxsField >;
 
-
 // 1: xml tags and attrs are case-sensitive !!!
 // 2: xml always consists of s SINGLE root tag
 Const
@@ -61,7 +60,19 @@ var
   t: TfxsTable; f: TfxsField;
 
 begin
-  wx := CreateXmlFileWriter(ToFile);
+//  wx := CreateXmlFileWriter(ToFile);
+
+  wx := CreateXmlLite.Data(ToFile).Writer;                             // Default UTF-8
+
+//  wx := CreateXmlLite.Data(ToFile).Encoding(TEncoding.Unicode).Writer; // UTF-16
+//  wx := CreateXmlLite.Data(ToFile).Encoding(1251).Writer;              // Windows GetACP for Russian
+//  wx := CreateXmlLite.Data(ToFile).Encoding('windows-1251').Writer;    // Windows GetACP for Russian
+
+//  The following three variants fail within XmlLite.dll with bad encoding error :-(
+//  wx := CreateXmlLite.Data(ToFile).Encoding( 866).Writer;              // Windows GetOEMCP for Russian
+//  wx := CreateXmlLite.Data(ToFile).Encoding('CP866').Writer;           // Windows GetOEMCP for Russian
+//  wx := CreateXmlLite.Data(ToFile).Encoding('cp1251').Writer;          // Windows GetACP for Russian
+
   if wx = nil then raise Exception.Create(ToFile + #13#10 + 'Can not write to the given file.');
 
   EXmlLite.Check( wx.SetProperty(XmlWriterProperty.Indent, LongInt(True)) ); 
@@ -69,6 +80,7 @@ begin
 
   EXmlLite.Check( wx.WriteStartDocument( XmlStandalone.Omit ) );
   EXmlLite.Check( wx.WriteComment( '  Delphi XML-Lite Demo Sample File, can be deleted  ' ) );
+  EXmlLite.Check( wx.WriteComment( '  Cyrillic text sample for encodings test. Пример кириллического текста.  ' ) );
   EXmlLite.Check( wx.Flush );
 
   EXmlLite.Check( wx.WriteStartElement( nil, Tag_DocRoot, nil) );
@@ -115,7 +127,13 @@ var rx: IXMLReader;
     CurrTableLevel, CurrLevel: Cardinal;
 begin
   Result := nil;
-  rx := CreateXmlFileReader( FromFile );
+
+//  rx := CreateXmlFileReader( FromFile );
+  rx := CreateXmlLite.Data(FromFile).Reader;
+  // reader should auto-adapt to the file encoding unless that is impossible in very special cases
+  // so here is no fair reason to pin-point encodings.
+  // not that pin-pointing it was of much sense for writer as well
+
   if rx = nil then raise Exception.Create( FromFile + #13#10 + 'Can not read from the given file.');
 
   ts := nil; fs := nil;
