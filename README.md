@@ -11,6 +11,10 @@ Header translation for Microsoft XmlLite
                                                                                         
 **Note**: This is a minimal translation, some parts were not implemented and most are untested.
 
+**Note**: i only used it in Win32 projects, but Delphi/Win64 was independently tested at 
+* https://github.com/EtheaDev/SVGIconImageList/pull/97
+* https://github.com/EtheaDev/SVGIconImageList/issues/96
+
 Sample code taken from production.  We use this to generate very large (>1GB) Xml files from an array of temporary files.
 
     procedure AppendFile(const FileName: string; _IXMLWriter: IXMLWriter);
